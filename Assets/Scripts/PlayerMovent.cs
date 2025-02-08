@@ -1,9 +1,9 @@
 using UnityEngine;
+using TMPro;
 
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
-    //public float sprintSpeed = 8f;
     public float gravityMultiplier = 2f;
     public Transform cameraTransform; 
     public float speedMultiplier = 1f;
@@ -16,6 +16,7 @@ public class PlayerMovement : MonoBehaviour
     private bool isGrounded;
     private bool hasPowerup = false;
 
+
     void Start()
     {
         anim = GetComponent<Animator>();
@@ -24,6 +25,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+
         isGrounded = controller.isGrounded;
 
         if (isGrounded && verticalVelocity < 0)
@@ -86,4 +88,5 @@ public class PlayerMovement : MonoBehaviour
         anim.SetBool("isRunning", false);
 
     }
+
 }
