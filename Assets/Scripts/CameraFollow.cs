@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI; 
 
 public class CameraFollow : MonoBehaviour
 {
@@ -7,6 +8,7 @@ public class CameraFollow : MonoBehaviour
     public float smoothSpeed = 5f; // Velocidad de suavizado para el movimiento de la cámara
     public float rotationSpeed = 3f; // Velocidad de rotación de la cámara
     public float verticalAngleLimit = 80f; // Límite en grados para la rotación vertical
+    public float minCameraHeight = 1f;
 
     private float rotationX = 0f; // Rotación en el eje X (horizontal)
     private float rotationY = 0f; // Rotación en el eje Y (vertical)
@@ -35,6 +37,9 @@ public class CameraFollow : MonoBehaviour
             // Calcular la posición deseada para la cámara
             Vector3 desiredPosition = target.position + rotation * offset;
 
+            // Asegurar que la cámara no esté por debajo del suelo
+            desiredPosition.y = Mathf.Max(desiredPosition.y, target.position.y + minCameraHeight);
+
             // Suavizar el movimiento de la cámara
             transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
 
@@ -42,4 +47,7 @@ public class CameraFollow : MonoBehaviour
             transform.LookAt(target);
         }
     }
+
+
+    
 }
