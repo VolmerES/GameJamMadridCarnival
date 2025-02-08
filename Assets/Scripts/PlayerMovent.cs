@@ -3,47 +3,87 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
-    public float sprintSpeed = 8f; // Velocidad al correr
-    public float gravity = 90f; // Gravedad personalizada
+    //public float sprintSpeed = 8f;
+    public float gravityMultiplier = 2f;
+    public Transform cameraTransform; 
+    public float speedMultiplier = 1f;
+    public float powerupDuration = 5f;
 
     private Vector3 moveDirection;
     private Animator anim;
-    private Rigidbody rb;
+    private CharacterController controller;
+    private float verticalVelocity;
+    private bool isGrounded;
+    private bool hasPowerup = false;
 
     void Start()
     {
-        anim = GetComponent<Animator>(); // Obtener el Animator del personaje
-        rb = GetComponent<Rigidbody>();  // Obtener el Rigidbody
-
-        // Asegurar que el Rigidbody tenga la configuración correcta
-        rb.useGravity = false; // Desactivamos la gravedad por defecto para usar la personalizada
+        anim = GetComponent<Animator>();
+        controller = GetComponent<CharacterController>();
     }
 
     void Update()
     {
+        isGrounded = controller.isGrounded;
+
+        if (isGrounded && verticalVelocity < 0)
+        {
+            verticalVelocity = -2f;
+        }
+
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
+         float currentSpeed = speed * speedMultiplier;
 
-        float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : speed;
-        moveDirection = new Vector3(moveX, 0, moveZ).normalized * currentSpeed;
+        // Dirección relativa a la cámara
+        Vector3 forward = cameraTransform.forward;
+        Vector3 right = cameraTransform.right;
+        forward.y = 0;
+        right.y = 0;
 
-        // Rotar el personaje en la dirección del movimiento
-        if (moveDirection != Vector3.zero)
+        moveDirection = (forward * moveZ + right * moveX).normalized;
+
+        verticalVelocity -= Physics.gravity.y * gravityMultiplier * Time.deltaTime;
+
+        Vector3 movement = moveDirection * currentSpeed;
+        movement.y = verticalVelocity;
+
+        controller.Move(movement * Time.deltaTime);
+
+        // **Evitar rotación instantánea al moverse hacia atrás**
+        if (moveDirection.magnitude > 0)
         {
-            transform.forward = moveDirection;
-            anim.SetBool("isWalking", !Input.GetKey(KeyCode.LeftShift));
-            anim.SetBool("isRunning", Input.GetKey(KeyCode.LeftShift));
+            float angleDifference = Vector3.Angle(transform.forward, moveDirection);
+
+            // Solo girar si el ángulo con la dirección nueva no es mayor a 120 grados
+            if (angleDifference < 120f)
+            {
+                transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(moveDirection), Time.deltaTime * 10f);
+            }
         }
-        else
+
+        // Actualizar animaciones
+        bool isMoving = moveX != 0 || moveZ != 0;
+        anim.SetBool("isWalking", isMoving && !hasPowerup);
+    }
+
+    public void ActivateSpeedBoost(float multiplier, float duration)
+    {
+        if (!hasPowerup)
         {
-            anim.SetBool("isWalking", false);
-            anim.SetBool("isRunning", false);
+            hasPowerup = true;
+            speedMultiplier = multiplier;
+            anim.SetBool("isRunning", true);
+            Invoke(nameof(ResetSpeed), duration);
         }
     }
 
-    void FixedUpdate()
+    // Restaurar la velocidad después del tiempo
+    private void ResetSpeed()
     {
-        // Aplicar el movimiento con Rigidbody
-        rb.velocity = new Vector3(moveDirection.x, rb.velocity.y - gravity * Time.fixedDeltaTime, moveDirection.z);
+        speedMultiplier = 1f;
+        hasPowerup = false;
+        anim.SetBool("isRunning", false);
+
     }
 }
