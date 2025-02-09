@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Video;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
 
 public class SkipVideo : MonoBehaviour
 {
@@ -10,16 +11,36 @@ public class SkipVideo : MonoBehaviour
     public float tiempoMantener = 2.0f;
     private float tiempoPresionado = 0f; 
     public GameObject mensajeUI;
+    public Image fadePanel;  // Panel de transición
+    public float fadeDuration = 1.5f; // Duración del fade-out
+
 
 
     void Start()
     {
-        videoPlayer.loopPointReached += CambiarEscena;
+        videoPlayer.loopPointReached += IniciarFadeOut;
+        if (fadePanel != null)
+        {
+            fadePanel.color = new Color(0, 0, 0, 0);
+            fadePanel.gameObject.SetActive(true);
+        }
     }
 
-    void CambiarEscena(VideoPlayer vp)
+    void IniciarFadeOut(VideoPlayer vp)
     {
-        SceneManager.LoadScene(escenaDestino); 
+        StartCoroutine(FadeOutAndChangeScene());
+    }
+    IEnumerator FadeOutAndChangeScene()
+    {
+        float t = 0;
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            fadePanel.color = new Color(fadePanel.color.r, fadePanel.color.g, fadePanel.color.b, t / fadeDuration);
+            yield return null;
+        }
+        videoPlayer.Stop();
+        SceneManager.LoadScene(escenaDestino); // Cambia de escena al finalizar el fade-out
     }
     void Update()
     {
@@ -49,8 +70,7 @@ public class SkipVideo : MonoBehaviour
 
     void SaltarVideo()
     {
-        videoPlayer.Stop();
-        SceneManager.LoadScene(escenaDestino);
+        IniciarFadeOut(videoPlayer);
     }
 }
 
